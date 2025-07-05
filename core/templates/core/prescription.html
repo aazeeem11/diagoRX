@@ -1,0 +1,358 @@
+{% extends 'core/base.html' %}
+{% load ai_filters %}
+
+{% block title %}Prescription - {{ patient_record.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Patient Information Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Patient Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ patient_record.patient_name }}</p>
+                        <p><strong>Age:</strong> {{ patient_record.age }} years</p>
+                        <p><strong>Gender:</strong> {{ patient_record.get_gender_display }}</p>
+                        <p><strong>Blood Group:</strong> {{ patient_record.blood_group|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Contact:</strong> {{ patient_record.contact_number|default:"Not provided" }}</p>
+                        <p><strong>Email:</strong> {{ patient_record.email|default:"Not provided" }}</p>
+                        <p><strong>Date:</strong> {{ patient_record.created_at|date:"F d, Y" }}</p>
+                        <p><strong>Time:</strong> {{ patient_record.created_at|time:"g:i A" }}</p>
+                    </div>
+                </div>
+                {% if patient_record.address %}
+                <div class="mt-3">
+                    <p><strong>Address:</strong> {{ patient_record.address }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Vital Signs Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>Vital Signs
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">Temperature</h6>
+                                            <h4 class="text-primary">
+                                                {% if patient_record.temperature %}
+                                                    {{ patient_record.temperature }}°C
+                                                {% else %}
+                                                    --
+                                                {% endif %}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">Blood Pressure</h6>
+                                            <h4 class="text-primary">
+                                                {{ patient_record.get_blood_pressure_display }}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">Pulse Rate</h6>
+                                            <h4 class="text-primary">
+                                                {% if patient_record.pulse_rate %}
+                                                    {{ patient_record.pulse_rate }} bpm
+                                                {% else %}
+                                                    --
+                                                {% endif %}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">O₂ Saturation</h6>
+                                            <h4 class="text-primary">
+                                                {% if patient_record.oxygen_saturation %}
+                                                    {{ patient_record.oxygen_saturation }}%
+                                                {% else %}
+                                                    --
+                                                {% endif %}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vital Signs Status -->
+                <div class="mt-3">
+                    <h6 class="text-info">
+                        <i class="fas fa-clipboard-check me-2"></i>Vital Signs Status
+                    </h6>
+                    <div class="row">
+                        {% for status in patient_record.get_vital_status %}
+                        <div class="col-md-3 mb-2">
+                            <span class="badge {% if status == 'Normal' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ status }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                {% if patient_record.respiratory_rate %}
+                <div class="mt-3">
+                    <p><strong>Respiratory Rate:</strong> {{ patient_record.respiratory_rate }} breaths/min</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI Diagnosis Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-brain me-2"></i>AI Diagnosis Results
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="text-success">Diagnosis</h5>
+                        {% if patient_record.ai_diagnosis %}
+                            {% if patient_record.ai_diagnosis|has_ai_analysis %}
+                                <p class="lead">{{ patient_record.ai_diagnosis|extract_ai_analysis|linebreaks }}</p>
+                                
+                                <!-- AI Analysis Results -->
+                                <div class="mt-3">
+                                    <h6 class="text-info">
+                                        <i class="fas fa-robot me-2"></i>AI Image/Report Analysis
+                                    </h6>
+                                    <div class="alert alert-info">
+                                        <div class="ai-analysis-results">
+                                            {{ patient_record.ai_diagnosis|extract_ai_analysis|linebreaks }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p class="lead">{{ patient_record.ai_diagnosis|linebreaks }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="lead">No diagnosis available</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Confidence Score</h6>
+                                <div class="display-6 text-primary">
+                                    {% if patient_record.confidence_score %}
+                                        {{ patient_record.confidence_score|floatformat:1 }}%
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {% if patient_record.ecg_report or patient_record.xray_report or patient_record.lab_report %}
+                                        Enhanced with AI analysis
+                                    {% else %}
+                                        Symptom-based only
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Information Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-stethoscope me-2"></i>Medical Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-info">Symptoms</h6>
+                        <p>{{ patient_record.symptoms }}</p>
+                        
+                        {% if patient_record.medical_history %}
+                        <h6 class="text-info">Medical History</h6>
+                        <p>{{ patient_record.medical_history }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if patient_record.current_medications %}
+                        <h6 class="text-info">Current Medications</h6>
+                        <p>{{ patient_record.current_medications }}</p>
+                        {% endif %}
+                        
+                        {% if patient_record.allergies %}
+                        <h6 class="text-info">Allergies</h6>
+                        <p>{{ patient_record.allergies }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatment Plan Card -->
+        {% if patient_record.treatment_plan %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-pills me-2"></i>Treatment Plan
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>{{ patient_record.treatment_plan }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Prescribed Medications Card -->
+        {% if patient_record.prescribed_medications %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-prescription-bottle-medical me-2"></i>Prescribed Medications
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Important:</strong> These medications are AI-recommended. Please consult with a healthcare professional before taking any medication.
+                </div>
+                <div class="medications-list">
+                    {{ patient_record.prescribed_medications|linebreaks }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recommended Tests Card -->
+        {% if patient_record.recommended_tests %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-flask me-2"></i>Recommended Tests
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>{{ patient_record.recommended_tests }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Action Buttons -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'core:download_pdf' patient_record.id %}" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Download PDF Report
+                    </a>
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>New Patient Record
+                    </a>
+                    <a href="{% url 'core:history' %}" class="btn btn-info">
+                        <i class="fas fa-history me-2"></i>View All Records
+                    </a>
+                    <a href="{% url 'core:delete_record' patient_record.id %}" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Record
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uploaded Reports -->
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-medical me-2"></i>Uploaded Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% if patient_record.ecg_report %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-heartbeat text-danger me-2"></i>ECG Report</span>
+                        <span class="badge bg-success">Available</span>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-heartbeat text-muted me-2"></i>ECG Report</span>
+                        <span class="badge bg-secondary">Not uploaded</span>
+                    </div>
+                    {% endif %}
+
+                    {% if patient_record.lab_report %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-flask text-info me-2"></i>Lab Report</span>
+                        <span class="badge bg-success">Available</span>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-flask text-muted me-2"></i>Lab Report</span>
+                        <span class="badge bg-secondary">Not uploaded</span>
+                    </div>
+                    {% endif %}
+
+                    {% if patient_record.xray_report %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-x-ray text-warning me-2"></i>X-ray Report</span>
+                        <span class="badge bg-success">Available</span>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-x-ray text-muted me-2"></i>X-ray Report</span>
+                        <span class="badge bg-secondary">Not uploaded</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
